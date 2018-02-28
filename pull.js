@@ -3,13 +3,22 @@ const request = require('request-promise');
 
 const visitSchema = {
   visitorId: 'string',
-  serverTimestamp: 'integer'
+  serverTimestamp: 'integer',
+  firstActionTimestamp: 'integer',
+  lastActionTimestamp: 'integer',
+  visitDuration: 'integer',
+  daysSinceFirstVisit: 'integer'
 };
 
 const detailSchema = {
   type: 'string',
   url: 'string',
-  timestamp: 'integer'
+  pageTitle: 'string',
+  timestamp: 'integer',
+  timeSpent: 'integer',
+  eventCategory: 'string',
+  eventAction: 'string',
+  eventName: 'string'
 };
 
 const url = getenv('URL');
@@ -92,7 +101,7 @@ async function insertResults(db, results) {
     idVisit: visit.idVisit
   }));
 
-  await db.batchInsert('visits', visits, 100);
+  await db.batchInsert('visits', visits, 50);
 
   const actionDetails = results.flatMap((visit) =>
     visit.actionDetails.map((actionDetail) => pick(detailSchema, actionDetail, {
@@ -101,13 +110,13 @@ async function insertResults(db, results) {
     }))
   );
 
-  await db.batchInsert('actionDetails', actionDetails, 100);
+  await db.batchInsert('actionDetails', actionDetails, 50);
 }
 
 function pick(schema, data, extra) {
   const row = Object.assign({}, extra);
   Object.keys(schema).forEach((name) => {
-    row[name] = data[name];
+    row[name] = data[name] || '';
   });
   return row;
 }
