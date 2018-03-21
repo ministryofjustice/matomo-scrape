@@ -45,6 +45,11 @@ async function main() {
   const db = await setupDatabase();
   const results = await fetchResults();
 
+  if (!results.map) {
+    console.log(results);
+    process.exit(1);
+  }
+
   await insertResults(db, results);
 
   console.log("Inserted %d visits", results.length);
