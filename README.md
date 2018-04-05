@@ -498,7 +498,7 @@ from
 
                     pra_25_monthly
               )
-            ):
+            );
 
 ```
 
