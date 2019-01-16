@@ -94,7 +94,10 @@ Using a plain text editor such as *TextEdit* (on a mac) open the `berwyn_feb_201
 
 #!/bin/bash
 
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_feb_2018.sqlite node pull.js 2018-02-01
+URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_feb_2018.sqlite node pull.js [START_DATE] [NUMBER_OF_DAYS] 
+
+START_DATE: e.g 2018-02-01
+NUMBER_OF_DAYS: 20
 
 ```
 
@@ -104,74 +107,10 @@ URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn
 
 
 
-The script pulls the stats for one day, so if you would like to pull the stats for one month, for example February 2018, your script will look something like this.
-
-
-
-```
-
-#!/bin/bash
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-01
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-02
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-03
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-04
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-05
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-06
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-07
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-08
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-09
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-10
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-11
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-12
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-13
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-14
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-15
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-16
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-17
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-18
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-19
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-20
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-21
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-22
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-23
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-24
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-25
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-26
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-27
-
-URL=http://digital-hub.bwi.dpn.gov.uk:12001/index.php TOKEN=token12356 DB=berwyn_npr_feb2018.sqlite node pull.js 2018-02-28
-
+The script pulls the stats for the range of days required based on the start date.
 
 
 ```
-
 
 
 To run the script use the following:
@@ -183,12 +122,6 @@ To run the script use the following:
 ./berwyn_feb_2018.sh
 
 ```
-
-
-
-The process can take 15 - 30 mins.
-
-
 
 ## Format the stats.
 
