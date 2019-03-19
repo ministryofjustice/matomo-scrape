@@ -1,0 +1,214 @@
+#!/usr/bin/env node
+
+/* eslint-disable no-console, camelcase */
+require("dotenv-safe").config();
+
+const request = require("superagent");
+const {
+  startOfToday,
+  format: formatDate,
+  differenceInCalendarDays,
+  addDays
+} = require("date-fns");
+const Json2csvParser = require("json2csv").Parser;
+const sanitizer = require("sanitizer");
+
+const {
+  getEstablishmentDetails,
+  generateCSVFile,
+  countDownSpinner
+} = require("../utils");
+
+if (process.argv.length < 4) {
+  console.error("Please ensure you enter the command in the below format:");
+  console.error(
+    './bin/feedback_stats "YYYY-MM-DD,YYYY-MM-DD" [establishment name]'
+  );
+
+  process.exit(1);
+}
+
+const today = `${formatDate(startOfToday(), "YYYY-MM-DD")}`;
+const dateRange = process.argv[2] || `${today},${today}`;
+const establishment = getEstablishmentDetails(process.argv[3] || "wayland");
+const folderPath = (process.argv[4] || "./csv-exports").replace(/[/]+$/, "");
+const filePath = `${folderPath}/${dateRange}-feedback-${
+  establishment.name
+}.csv`;
+const countdown = countDownSpinner();
+
+// Run script
+countdown.start();
+Promise.all(getAllAnalyticsData(dateRange))
+  .then(results => {
+    const flatResults = results.reduce(flatten, []);
+    const csvData = generateCSVData(flatResults);
+    return generateCSVFile(folderPath, filePath, csvData);
+  })
+  .then(() => {
+    countdown.stop();
+    console.log(`Created: ${filePath}`);
+    process.exit(0);
+  })
+  .catch(error => {
+    countdown.stop();
+    console.error(error);
+    process.exit(1);
+  });
+
+// Helper functions
+function getAnalyticsDataFrom(date) {
+  return request
+    .get(establishment.siteUrl)
+    .query({
+      date,
+      expanded: "1",
+      filter_limit: "-1",
+      filter_pattern: "like",
+      format: "JSON",
+      idSite: "1",
+      method: "Events.getAction",
+      module: "API",
+      period: "day",
+      token_auth: establishment.token
+    })
+    .then(({ body }) => {
+      return parseResponse(body);
+    });
+}
+
+function getAllAnalyticsData(dates) {
+  const [startDate, endDate] = dates.split(",");
+  const differenceInDays = Math.abs(
+    differenceInCalendarDays(new Date(startDate), new Date(endDate))
+  );
+
+  if (differenceInDays === 0) {
+    return [getAnalyticsDataFrom(startDate)];
+  }
+
+  return new Array(differenceInDays)
+    .fill(undefined)
+    .map((elem, index) => {
+      const date = new Date(startDate);
+      const nextDate = addDays(date, index);
+      return formatDate(nextDate, "YYYY-MM-DD");
+    })
+    .map(getAnalyticsDataFrom);
+}
+
+function parseResponse(data) {
+  if (!Array.isArray(data)) {
+    console.error(data);
+    throw new Error("Invalid data received");
+  }
+  return data
+    .map(extractEventData)
+    .reduce(flatten, [])
+    .sort(sortByDateDescending)
+    .map(decorateData);
+}
+
+function extractCommentFromAction(str) {
+  const regex = /^([^\s]+)(?:\s-\s)?(.+)?/g;
+  const results = [];
+  str.replace(regex, (match, cg1, cg2) => {
+    results.push(cg1);
+    results.push(cg2);
+  });
+
+  return {
+    action: results[0],
+    comments: sanitizer.escape(results[1] || "N/A")
+  };
+}
+
+function extractEventData({ label, subtable }) {
+  const action = extractCommentFromAction(label);
+
+  return subtable.map(data => {
+    const eventData = getDataFromLabel(data.label);
+    return {
+      ...eventData,
+      action: action.action,
+      comments: action.comments
+    };
+  });
+}
+
+function getDataFromLabel(label) {
+  // title | PageURL | Like/DISLIKE | Time/Date | ContentType | Series | Time take react | visitor ID | Establishment
+  const [
+    title,
+    page_url,
+    action,
+    date,
+    content_type,
+    series,
+    time_spent_to_action,
+    visitor_id,
+    establishment
+  ] = label.split("|");
+
+  return {
+    title,
+    page_url,
+    content_type,
+    series,
+    action,
+    date,
+    time_spent_to_action,
+    visitor_id,
+    establishment
+  };
+}
+
+function sortByDateDescending(a, b) {
+  return b.date - a.date;
+}
+
+function flatten(acc, currentValue) {
+  return acc.concat(currentValue);
+}
+
+function decorateData(data) {
+  return {
+    ...data,
+    action: data.comments !== "N/A" ? `COMMENT-${data.action}` : data.action,
+    date: formatDate(new Date(+data.date), "DD MMMM YYYY"),
+    time: formatDate(new Date(+data.date), "HH:mm"),
+    time_spent_to_action: fmtMSS(+data.time_spent_to_action || 0)
+  };
+}
+
+function generateCSVData(data) {
+  const fields = [
+    "title",
+    "page_url",
+    "content_type",
+    "series",
+    "action",
+    "comments",
+    "date",
+    "time",
+    "time_spent_to_action",
+    "visitor_id",
+    "establishment"
+  ];
+  const json2csvParser = new Json2csvParser({ fields });
+  const csv = json2csvParser.parse(data);
+
+  return csv;
+}
+
+function fmtMSS(s) {
+  const hours = padWithZero(Math.floor(s / 3600));
+  const minutes = padWithZero(Math.floor((s / 60) % 60));
+  const seconds = padWithZero(s % 60);
+
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+function padWithZero(n) {
+  return n < 10 ? `0${n}` : n;
+}
