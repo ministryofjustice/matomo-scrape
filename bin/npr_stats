@@ -1,0 +1,142 @@
+#!/usr/bin/env node
+
+/* eslint-disable no-console, camelcase */
+require("dotenv-safe").config();
+
+const request = require("superagent");
+const { startOfToday, format: formatDate } = require("date-fns");
+const Json2csvParser = require("json2csv").Parser;
+
+const {
+  getEstablishmentDetails,
+  generateCSVFile,
+  countDownSpinner
+} = require("../utils");
+
+if (process.argv.length < 4) {
+  console.error("Please ensure you enter the command in the below format:");
+  console.error('./bin/npr_stats "YYYY-MM-DD,YYYY-MM-DD" [establishment name]');
+  process.exit(1);
+}
+
+const today = `${formatDate(startOfToday(), "YYYY-MM-DD")}`;
+const dateRange = process.argv[2] || `${today},${today}`;
+const establishment = getEstablishmentDetails(process.argv[3] || "berwyn");
+const folderPath = (process.argv[4] || "./csv-exports").replace(/[/]+$/, "");
+const filePath = `${folderPath}/${dateRange}-npr-${establishment.name}.csv`;
+const countdown = countDownSpinner();
+
+// Run script
+countdown.start();
+
+getAnalyticsDataFrom(dateRange)
+  .then(results => {
+    const formatedData = aggregateStats(results);
+    const csvData = generateCSVData(formatedData);
+    return generateCSVFile(folderPath, filePath, csvData);
+  })
+  .then(() => {
+    countdown.stop();
+    console.log(`Created: ${filePath}`);
+    process.exit(0);
+  })
+  .catch(error => {
+    countdown.stop();
+    console.error(error);
+    process.exit(1);
+  });
+
+// Helper functions
+function getAnalyticsDataFrom(dates) {
+  return request
+    .get(establishment.siteUrl)
+    .query({
+      date: dates,
+      expanded: "1",
+      filter_limit: "-1",
+      filter_pattern: "25%|50%|75%|90%",
+      format: "JSON",
+      idSite: "1",
+      method: "Events.getAction",
+      module: "API",
+      period: "range",
+      token_auth: establishment.token
+    })
+    .then(({ body }) => {
+      return parseResponse(body);
+    });
+}
+
+function parseResponse(data) {
+  if (!Array.isArray(data)) {
+    console.error(data);
+    throw new Error("Invalid data received");
+  }
+  return data.reduce((acc, curr) => {
+    return {
+      ...acc,
+      [curr.label]: {
+        ...extractEventData(curr.subtable)
+      }
+    };
+  }, {});
+}
+
+function extractEventData(data) {
+  return data.reduce((acc, curr) => {
+    return {
+      ...acc,
+      [curr.label]: curr.nb_events
+    };
+  }, {});
+}
+
+function generateCSVData(data) {
+  const fields = ["eventname", "count25", "count50", "count75", "count90"];
+  const json2csvParser = new Json2csvParser({ fields });
+  const csv = json2csvParser.parse(data);
+
+  return csv;
+}
+
+function aggregateStats(data) {
+  return Object.keys(data["25%"]).map(title => {
+    let result = {
+      eventname: title,
+      count25: 0,
+      count50: 0,
+      count75: 0,
+      count90: 0
+    };
+
+    if (data["25%"][title]) {
+      result = {
+        ...result,
+        count25: data["25%"][title]
+      };
+    }
+
+    if (data["50%"][title]) {
+      result = {
+        ...result,
+        count50: data["50%"][title]
+      };
+    }
+
+    if (data["75%"][title]) {
+      result = {
+        ...result,
+        count75: data["75%"][title]
+      };
+    }
+
+    if (data["90%"][title]) {
+      result = {
+        ...result,
+        count90: data["90%"][title]
+      };
+    }
+
+    return result;
+  });
+}

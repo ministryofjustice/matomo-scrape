@@ -1,5 +1,4 @@
 node_modules/
-*.sh
-*.sqlite
-csv/
+csv-exports/
 .DS_Store
+.env
