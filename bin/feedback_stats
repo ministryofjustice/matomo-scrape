@@ -137,7 +137,6 @@ function extractEventData({ label, subtable }) {
 }
 
 function getDataFromLabel(label) {
-  // title | PageURL | Like/DISLIKE | Time/Date | ContentType | Series | Time take react | visitor ID | Establishment
   const [
     title,
     page_url,
