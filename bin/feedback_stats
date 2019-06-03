@@ -102,6 +102,7 @@ function parseResponse(data) {
     console.error(data);
     throw new Error("Invalid data received");
   }
+
   return data
     .map(extractEventData)
     .reduce(flatten, [])

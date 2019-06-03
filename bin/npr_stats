@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 /* eslint-disable no-console, camelcase */
 require("dotenv-safe").config();
 
@@ -92,7 +91,7 @@ function extractEventData(data) {
 }
 
 function generateCSVData(data) {
-  const fields = ["eventname", "count25", "count50", "count75", "count90"];
+  const fields = ["programmecode", "eventname", "count25", "count50", "count75", "count90"];
   const json2csvParser = new Json2csvParser({ fields });
   const csv = json2csvParser.parse(data);
 
@@ -100,8 +99,10 @@ function generateCSVData(data) {
 }
 
 function aggregateStats(data) {
-  return Object.keys(data["25%"]).map(title => {
+  return Object.keys(data["25%"]).map(label => {
+    const [title, programmeCode] = label.split('|');
     let result = {
+      programmecode: programmeCode || 'INVALID',
       eventname: title,
       count25: 0,
       count50: 0,
@@ -109,31 +110,31 @@ function aggregateStats(data) {
       count90: 0
     };
 
-    if (data["25%"][title]) {
+    if (data["25%"][title + '|' + programmeCode] || (data["25%"][title]))  {
       result = {
         ...result,
-        count25: data["25%"][title]
+        count25: data["25%"][title + '|' + programmeCode] || data["25%"][title]
       };
     }
 
-    if (data["50%"][title]) {
+    if (data["50%"][title + '|' + programmeCode] || (data["50%"][title])) {
       result = {
         ...result,
-        count50: data["50%"][title]
+        count50: data["50%"][title + '|' + programmeCode] || data["50%"][title]
       };
     }
 
-    if (data["75%"][title]) {
+    if (data["75%"][title + '|' + programmeCode] || (data["75%"][title])) {
       result = {
         ...result,
-        count75: data["75%"][title]
+        count75: data["75%"][title + '|' + programmeCode] || data["75%"][title]
       };
     }
 
-    if (data["90%"][title]) {
+    if (data["90%"][title + '|' + programmeCode] || (data["90%"][title])) {
       result = {
         ...result,
-        count90: data["90%"][title]
+        count90: data["90%"][title + '|' + programmeCode] || data["90%"][title]
       };
     }
 
