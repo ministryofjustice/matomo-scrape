@@ -90,54 +90,112 @@ function extractEventData(data) {
   }, {});
 }
 
-function generateCSVData(data) {
-  const fields = ["programmecode", "eventname", "count25", "count50", "count75", "count90"];
-  const json2csvParser = new Json2csvParser({ fields });
-  const csv = json2csvParser.parse(data);
-
-  return csv;
+function aggregateStats(data) {
+  const eventsAt25Percent = Object.keys(data["25%"]);
+  
+  return eventsAt25Percent
+          .map(collateNPRPlayedEventData(data))
+          .reduce(mergeDuplicates, [])
 }
 
-function aggregateStats(data) {
-  return Object.keys(data["25%"]).map(label => {
+//checks if the play event has reached 25%|50%|75%|90% before recording the next event 
+function collateNPRPlayedEventData(data) {
+  return (label) => {
     const [title, programmeCode] = label.split('|');
+
     let result = {
-      programmecode: programmeCode || 'INVALID',
-      eventname: title,
+      programmecode: programmeCode ? programmeCode.trim() : 'UNSET',
+      eventname: title.trim(),
       count25: 0,
       count50: 0,
       count75: 0,
       count90: 0
     };
 
-    if (data["25%"][title + '|' + programmeCode] || (data["25%"][title]))  {
+    if (data["25%"][label])  {
       result = {
         ...result,
-        count25: data["25%"][title + '|' + programmeCode] || data["25%"][title]
+        count25: data["25%"][label]
       };
     }
 
-    if (data["50%"][title + '|' + programmeCode] || (data["50%"][title])) {
+    if (data["50%"][label]) {
       result = {
         ...result,
-        count50: data["50%"][title + '|' + programmeCode] || data["50%"][title]
+        count50: data["50%"][label]
       };
     }
 
-    if (data["75%"][title + '|' + programmeCode] || (data["75%"][title])) {
+    if (data["75%"][label]) {
       result = {
         ...result,
-        count75: data["75%"][title + '|' + programmeCode] || data["75%"][title]
+        count75: data["75%"][label]
       };
     }
 
-    if (data["90%"][title + '|' + programmeCode] || (data["90%"][title])) {
+    if (data["90%"][label]) {
       result = {
         ...result,
-        count90: data["90%"][title + '|' + programmeCode] || data["90%"][title]
+        count90: data["90%"][label]
       };
     }
 
     return result;
-  });
+  }
+}
+
+function mergeDuplicates(acc, curr) {
+  const index = acc.findIndex(item => item.eventname === curr.eventname);
+    if (index === -1) {
+      return acc.concat(curr);
+    }
+
+
+    const arrCopy = [...acc];
+    const updated = mergeBothVal(acc[index], curr);
+
+    arrCopy.splice(index, 1, updated);
+
+    return arrCopy;
+}
+
+function mergeBothVal(a,b) {
+
+  const keys = ["programmecode", "eventname", "count25", "count50", "count75", "count90"];
+
+  return keys.reduce((acc, key) => {
+    if(key == 'programmecode') {
+      if (a[key] === b[key]) {
+        acc[key] = a[key];
+      }
+      else if(a[key] === 'UNSET' && b[key] !== 'UNSET') {
+        acc[key] = b[key];
+      }
+      else {
+        acc[key] = a[key];
+      }
+    }
+
+    if(key === 'eventname') {
+      acc[key] = a[key];
+    }
+
+    if(["count25", "count50", "count75", "count90"].includes(key)) {
+      acc[key] = upperAverage(a[key], b[key]);
+    }
+
+    return acc;
+  }, {});
+}
+
+function upperAverage(a, b) {
+  return Math.ceil((a + b) / 2);
+}
+
+function generateCSVData(data) {
+  const fields = ["programmecode", "eventname", "count25", "count50", "count75", "count90"];
+  const json2csvParser = new Json2csvParser({ fields });
+  const csv = json2csvParser.parse(data);
+
+  return csv;
 }
